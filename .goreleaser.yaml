@@ -1,0 +1,94 @@
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      # - windows
+    goarch:
+      - arm
+      - amd64
+      - arm64
+      # - "386"
+    goarm:
+      # - "6"
+      - "7"
+    flags:
+      - -trimpath
+
+    ldflags:
+        - -s -w -X main.buildVersion={{.Version}} -X main.buildBranch={{.Branch}}
+        # - -s -w -X github.com/thin-edge/device-registration-server/main.buildVersion={{.Version}} -X github.com/thin-edge/device-registration-server/main.buildBranch={{.Branch}}
+
+nfpms:
+  -
+    id: device-registration-server
+    package_name: device-registration-server
+
+    # You can change the file name of the package.
+    #
+    # Default: '{{ .PackageName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}{{ with .Mips }}_{{ . }}{{ end }}{{ if not (eq .Amd64 "v1") }}{{ .Amd64 }}{{ end }}'
+    # Templates: allowed
+    file_name_template: "{{ .ConventionalFileName }}"
+    # file_name_template: '{{ .PackageName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}{{ with .Mips }}_{{ . }}{{ end }}{{ if not (eq .Amd64 "v1") }}{{ .Amd64 }}{{ end }}'
+    vendor: thin-edge.io
+    homepage: https://github.com/thin-edge/device-registration-server
+    maintainer: thin-edge <community@thin-edge.com>
+    description: |-
+      Device registration service for thin-edge.io. It allows child
+      devices to be registered via an HTTP interface.
+
+    license: Apache 2.0
+    formats:
+      - apk
+      - deb
+      - rpm
+
+    provides:
+      - device-registration-server
+
+    # Path that the binaries should be installed.
+    bindir: /usr/bin
+
+    scripts:
+      postinstall: "scripts/postinstall.sh"
+
+    contents:
+      - src: ./services/systemd/device-registration-server.service
+        dst: /usr/lib/systemd/system/device-registration-server.service
+        file_info:
+          mode: 0755
+          owner: tedge
+          group: tedge
+
+      - src: ./services/init.d/device-registration-server
+        dst: /etc/init.d/device-registration-server
+        file_info:
+          mode: 0755
+          owner: tedge
+          group: tedge
+
+archives:
+  - replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      386: i386
+      amd64: x86_64
+
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json

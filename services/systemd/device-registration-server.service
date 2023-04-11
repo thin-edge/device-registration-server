@@ -1,0 +1,12 @@
+[Unit]
+Description=thin-edge.io child device registration service
+
+[Service]
+User=tedge
+ExecStart=/usr/bin/device-registration-server
+Restart=always
+RestartSec=30
+EnvironmentFile=-/etc/device-registration-server/env
+
+[Install]
+WantedBy=multi-user.target
