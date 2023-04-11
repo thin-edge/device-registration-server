@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -135,7 +136,7 @@ func GetDeviceID() (string, error) {
 	if err != nil {
 		slog.Error("Could not get device.id from tedge.", "error", err)
 	}
-	return string(cmd), err
+	return string(bytes.TrimSpace(cmd)), err
 }
 
 func main() {
