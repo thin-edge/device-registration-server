@@ -72,6 +72,7 @@ func registerHandler(id string, baseDir string, sep string) func(w http.Response
 			deviceID = value
 		}
 
+		slog.Info("Received registration request.", "name", request.Name, "supportedOperations", request.SupportedOperations, "deviceID", deviceID)
 		childID := strings.Join([]string{deviceID, request.Name}, sep)
 		if err := RegisterDevice(childID, baseDir, request.SupportedOperations); err != nil {
 			writeJSONResponse(w, http.StatusNotFound, ErrorResponse{
