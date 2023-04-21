@@ -69,10 +69,29 @@ func registerHandler(id string, baseDir string, sep string) func(w http.Response
 				})
 				return
 			}
-			deviceID = value
+			deviceID = strings.TrimSpace(value)
 		}
 
 		slog.Info("Received registration request.", "name", request.Name, "supportedOperations", request.SupportedOperations, "deviceID", deviceID)
+
+		if deviceID == "" {
+			// Fail early if the device.id has not been set
+			writeJSONResponse(w, http.StatusNotFound, ErrorResponse{
+				Message: "tedge device.id is not set",
+				Details: "Most likely the device certificate has not been created for tedge just yet.",
+			})
+			return
+		}
+
+		// Disallow short device names (technically not an issue, but it is usually a sign that the user is being lazy and using names which will cause future problems)
+		if len(request.Name) < 3 {
+			writeJSONResponse(w, http.StatusUnprocessableEntity, ErrorResponse{
+				Message: "Invalid name for a child",
+				Details: fmt.Sprintf("Child device names must be at least 4 characters long. got=%s (len=%d)", request.Name, len(request.Name)),
+			})
+			return
+		}
+
 		childID := strings.Join([]string{deviceID, request.Name}, sep)
 		if err := RegisterDevice(childID, baseDir, request.SupportedOperations); err != nil {
 			writeJSONResponse(w, http.StatusNotFound, ErrorResponse{
