@@ -115,7 +115,7 @@ If you have uncommitted changes then you can build a snapshot with the following
 just release-snapshot
 ```
 
-### Running it local
+### Running it locally
 
 You can start the project locally by running:
 
@@ -130,4 +130,10 @@ Then send a request to the local service using curl.
 curl http://127.0.0.1:9000/register \
     -X POST \
     --data '{"name":"mychild","supportedOperations":["c8y_Firmware"]}' -H "Content-Type: application/json"
+```
+
+Example output:
+
+```sh
+{"name":"mychild","id":"mychild","parent":"main001"}
 ```
