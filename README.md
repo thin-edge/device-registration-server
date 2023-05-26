@@ -84,6 +84,8 @@ The following flags are supported.
         Port (default 9000)
   --separator string
         Device name separator (default "_")
+  --use-prefix
+        Prefix the child id with the main device id (default true)
   --version
         Show version information
 ```
@@ -97,6 +99,7 @@ Alternatively the values for the flags can be provided via environment variables
 |`--bind`|`REGISTRATION_BIND`|
 |`--port`|`REGISTRATION_PORT`|
 |`--separator`|`REGISTRATION_SEPARATOR`|
+|`--use-prefix=<true|false>`|`REGISTRATION_USE_PREFIX`|
 
 ### Building
 
@@ -110,4 +113,27 @@ If you have uncommitted changes then you can build a snapshot with the following
 
 ```sh
 just release-snapshot
+```
+
+### Running it locally
+
+You can start the project locally by running:
+
+```sh
+mkdir -p tmp/operations/c8y
+go run main.go --use-prefix=false --device-id main001 --config-dir tmp
+```
+
+Then send a request to the local service using curl.
+
+```sh
+curl http://127.0.0.1:9000/register \
+    -X POST \
+    --data '{"name":"mychild","supportedOperations":["c8y_Firmware"]}' -H "Content-Type: application/json"
+```
+
+Example output:
+
+```sh
+{"name":"mychild","id":"mychild","parent":"main001"}
 ```

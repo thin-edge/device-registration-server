@@ -47,11 +47,11 @@ func writeJSONResponse(w http.ResponseWriter, statusCode int, response any) {
 	}
 }
 
-func registerHandler(id string, baseDir string, sep string) func(w http.ResponseWriter, req *http.Request) {
+func registerHandler(id string, baseDir string, sep string, usePrefix bool) func(w http.ResponseWriter, req *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {
 		decoder := json.NewDecoder(req.Body)
 		request := &RegistrationRequest{}
-		if err := decoder.Decode(&request); err != nil {
+		if err := decoder.Decode(request); err != nil {
 			writeJSONResponse(w, http.StatusUnsupportedMediaType, &ErrorResponse{
 				Message: "Could not parse registration request",
 				Details: err.Error(),
@@ -92,7 +92,12 @@ func registerHandler(id string, baseDir string, sep string) func(w http.Response
 			return
 		}
 
-		childID := strings.Join([]string{deviceID, request.Name}, sep)
+		// Set child name. Either prefix it with the device ID or just use the value as is
+		childID := request.Name
+		if usePrefix {
+			childID = strings.Join([]string{deviceID, request.Name}, sep)
+		}
+
 		if err := RegisterDevice(childID, baseDir, request.SupportedOperations); err != nil {
 			writeJSONResponse(w, http.StatusNotFound, ErrorResponse{
 				Message: "Could not register device",
@@ -166,6 +171,7 @@ func main() {
 	var configDir string
 	var nameSeparator string
 	var showVersion bool
+	var usePrefix bool
 
 	flag.IntVar(&port, "port", 9000, "Port")
 	flag.StringVar(&bindAddr, "bind", "", "Bind address to which the http server should attach to. It listens on all adapters by default.")
@@ -173,6 +179,7 @@ func main() {
 	flag.StringVar(&configDir, "config-dir", "/etc/tedge", "thin-edge.io base configuration directory")
 	flag.StringVar(&nameSeparator, "separator", "_", "Device name separator")
 	flag.BoolVar(&showVersion, "version", false, "Show version information")
+	flag.BoolVar(&usePrefix, "use-prefix", true, "Prefix the child id with the main device id")
 
 	// Support setting flags via environment variables
 	flag.VisitAll(func(f *flag.Flag) {
@@ -190,6 +197,6 @@ func main() {
 
 	listenOn := fmt.Sprintf("%s:%d", bindAddr, port)
 	slog.Info("Starting registration service.", "listen", listenOn, "deviceID", deviceID)
-	http.HandleFunc("/register", registerHandler(deviceID, configDir, nameSeparator))
+	http.HandleFunc("/register", registerHandler(deviceID, configDir, nameSeparator, usePrefix))
 	http.ListenAndServe(listenOn, nil)
 }
